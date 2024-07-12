@@ -21,18 +21,14 @@ dependencies:
   flutter_hooks: ^0.20.5
 
   cancellable: ^2.0.0
-  anlifecycle: ^2.0.2
-  an_lifecycle_cancellable: ^0.0.3
+  anlifecycle: ^2.0.3
+  an_lifecycle_cancellable: ^0.0.4
   an_lifecycle_viewmodel: any
 
 dev_dependencies:
   flutter_lints: ^4.0.0
 
 dependency_overrides:
-  an_lifecycle_cancellable:
-    path: ../lifecycle_cancellable
-  anlifecycle:
-    path: ../lifecycle
   an_lifecycle_viewmodel:
     path: ../lifecycle_viewmodel
 

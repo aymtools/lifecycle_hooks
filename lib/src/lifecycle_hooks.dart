@@ -52,81 +52,68 @@ class _LifecycleHookState extends HookState<void, LifecycleHook>
     }
   }
 }
-//
-// class A with ViewModel {
-//   late ValueNotifier<int> counter;
-//
-//   void fetchData() {
-//     print('fetchData');
-//     counter = ValueNotifier(0);
-//   }
-//
-//   void add() {
-//     counter.value++;
-//   }
-// }
-//
-// class TestHooks extends HookWidget {
-//   const TestHooks({super.key});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     A instance = useLifecycleEffect<A>(
-//       factory: A.new,
-//       launchOnFirstStart: (a) {
-//         print('launchOnFirstStarted');
-//         a.fetchData();
-//       },
-//     );
-//     useListenable(instance.counter);
-//     return const Placeholder();
-//   }
-// }
 
 LifecycleObserverRegistry useLifecycle() {
   use(const LifecycleHook());
   return _hooksLifecycleRegistry[useContext()]!;
 }
 
-typedef Launcher<T> = FutureOr Function(T data);
+typedef LifecycleEffectTask<T> = FutureOr Function(
+    LifecycleObserverRegistry lifecycle, T data);
 
 T useLifecycleEffect<T extends Object>({
   T? data,
   T Function()? factory,
-  Launcher<T>? launchOnFirstCreate,
-  Launcher<T>? launchOnFirstStart,
-  Launcher<T>? launchOnFirstResume,
-  Launcher<T>? repeatOnStarted,
-  Launcher<T>? repeatOnResumed,
+  T Function(LifecycleObserverRegistry lifecycle)? factory2,
+  LifecycleEffectTask<T>? launchOnFirstCreate,
+  LifecycleEffectTask<T>? launchOnFirstStart,
+  LifecycleEffectTask<T>? launchOnFirstResume,
+  LifecycleEffectTask<T>? repeatOnStarted,
+  LifecycleEffectTask<T>? repeatOnResumed,
 }) {
   final life = useLifecycle();
+
   return life.withLifecycleEffect(
-      data: data,
-      factory: factory,
-      launchOnFirstCreate: launchOnFirstCreate,
-      launchOnFirstStart: launchOnFirstStart,
-      launchOnFirstResume: launchOnFirstResume,
-      repeatOnStarted: repeatOnStarted,
-      repeatOnResumed: repeatOnResumed);
+    factory: () => life.lifecycleExtData.putIfAbsent(
+        TypedKey<T>('useLifecycleEffect'),
+        () => data ?? factory?.call() ?? factory2!.call(life)),
+    launchOnFirstCreate: _convertLifecycleEffectTask(life, launchOnFirstCreate),
+    launchOnFirstStart: _convertLifecycleEffectTask(life, launchOnFirstStart),
+    launchOnFirstResume: _convertLifecycleEffectTask(life, launchOnFirstResume),
+    repeatOnStarted: _convertLifecycleEffectTask(life, repeatOnStarted),
+    repeatOnResumed: _convertLifecycleEffectTask(life, repeatOnResumed),
+  );
 }
 
-T useLifecycleViewModelEffect<T extends ViewModel>({
-  T? data,
-  T Function()? factory,
-  Launcher<T>? launchOnFirstCreate,
-  Launcher<T>? launchOnFirstStart,
-  Launcher<T>? launchOnFirstResume,
-  Launcher<T>? repeatOnStarted,
-  Launcher<T>? repeatOnResumed,
+VM useLifecycleViewModelEffect<VM extends ViewModel>({
+  VM? data,
+  VM Function()? factory,
+  VM Function(LifecycleObserverRegistry lifecycle)? factory2,
+  LifecycleEffectTask<VM>? launchOnFirstCreate,
+  LifecycleEffectTask<VM>? launchOnFirstStart,
+  LifecycleEffectTask<VM>? launchOnFirstResume,
+  LifecycleEffectTask<VM>? repeatOnStarted,
+  LifecycleEffectTask<VM>? repeatOnResumed,
 }) {
-  use(const LifecycleHook());
-  final life = _hooksLifecycleRegistry[useContext()];
-  return life!.withLifecycleEffect(
-      data: data,
-      factory: factory ?? life.viewModels(),
-      launchOnFirstCreate: launchOnFirstCreate,
-      launchOnFirstStart: launchOnFirstStart,
-      launchOnFirstResume: launchOnFirstResume,
-      repeatOnStarted: repeatOnStarted,
-      repeatOnResumed: repeatOnResumed);
+  final life = useLifecycle();
+
+  return life.withLifecycleEffect(
+    factory: () => life.lifecycleExtData.putIfAbsent(
+        TypedKey<VM>('useLifecycleViewModelEffect'),
+        () =>
+            data ??
+            factory?.call() ??
+            factory2?.call(life) ??
+            life.viewModels()),
+    launchOnFirstCreate: _convertLifecycleEffectTask(life, launchOnFirstCreate),
+    launchOnFirstStart: _convertLifecycleEffectTask(life, launchOnFirstStart),
+    launchOnFirstResume: _convertLifecycleEffectTask(life, launchOnFirstResume),
+    repeatOnStarted: _convertLifecycleEffectTask(life, repeatOnStarted),
+    repeatOnResumed: _convertLifecycleEffectTask(life, repeatOnResumed),
+  );
 }
+
+FutureOr Function(T data)? _convertLifecycleEffectTask<T>(
+        LifecycleObserverRegistry lifecycle,
+        FutureOr Function(LifecycleObserverRegistry, T)? callback) =>
+    callback == null ? null : (data) => callback(lifecycle, data);
