@@ -75,7 +75,7 @@ T useLifecycleEffect<T extends Object>({
 
   return life.withLifecycleEffect(
     factory: () => life.lifecycleExtData.putIfAbsent(
-        TypedKey<T>('useLifecycleEffect'),
+        TypedKey<T>(useLifecycleEffect),
         () => data ?? factory?.call() ?? factory2!.call(life)),
     launchOnFirstCreate: _convertLifecycleEffectTask(life, launchOnFirstCreate),
     launchOnFirstStart: _convertLifecycleEffectTask(life, launchOnFirstStart),
@@ -96,15 +96,21 @@ VM useLifecycleViewModelEffect<VM extends ViewModel>({
   LifecycleEffectTask<VM>? repeatOnResumed,
 }) {
   final life = useLifecycle();
+  VM Function()? vmFactory;
+  if (data != null) {
+    vmFactory = () => data;
+  }
+  if (vmFactory == null && factory != null) {
+    vmFactory = factory;
+  }
+  if (vmFactory == null && factory2 != null) {
+    vmFactory = () => factory2(life);
+  }
 
   return life.withLifecycleEffect(
     factory: () => life.lifecycleExtData.putIfAbsent(
-        TypedKey<VM>('useLifecycleViewModelEffect'),
-        () =>
-            data ??
-            factory?.call() ??
-            factory2?.call(life) ??
-            life.viewModels()),
+        TypedKey<VM>(useLifecycleViewModelEffect),
+        () => life.viewModels(factory: vmFactory)),
     launchOnFirstCreate: _convertLifecycleEffectTask(life, launchOnFirstCreate),
     launchOnFirstStart: _convertLifecycleEffectTask(life, launchOnFirstStart),
     launchOnFirstResume: _convertLifecycleEffectTask(life, launchOnFirstResume),
