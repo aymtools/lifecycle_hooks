@@ -68,6 +68,7 @@ T useLifecycleEffect<T extends Object>({
   LifecycleEffectTask<T>? launchOnFirstCreate,
   LifecycleEffectTask<T>? launchOnFirstStart,
   LifecycleEffectTask<T>? launchOnFirstResume,
+  LifecycleEffectTask<T>? launchOnDestroy,
   LifecycleEffectTask<T>? repeatOnStarted,
   LifecycleEffectTask<T>? repeatOnResumed,
 }) {
@@ -80,6 +81,7 @@ T useLifecycleEffect<T extends Object>({
     launchOnFirstCreate: _convertLifecycleEffectTask(life, launchOnFirstCreate),
     launchOnFirstStart: _convertLifecycleEffectTask(life, launchOnFirstStart),
     launchOnFirstResume: _convertLifecycleEffectTask(life, launchOnFirstResume),
+    launchOnDestroy: _convertLifecycleEffectTask(life, launchOnDestroy),
     repeatOnStarted: _convertLifecycleEffectTask(life, repeatOnStarted),
     repeatOnResumed: _convertLifecycleEffectTask(life, repeatOnResumed),
   );
@@ -92,6 +94,7 @@ VM useLifecycleViewModelEffect<VM extends ViewModel>({
   LifecycleEffectTask<VM>? launchOnFirstCreate,
   LifecycleEffectTask<VM>? launchOnFirstStart,
   LifecycleEffectTask<VM>? launchOnFirstResume,
+  LifecycleEffectTask<VM>? launchOnDestroy,
   LifecycleEffectTask<VM>? repeatOnStarted,
   LifecycleEffectTask<VM>? repeatOnResumed,
 }) {
@@ -114,6 +117,7 @@ VM useLifecycleViewModelEffect<VM extends ViewModel>({
     launchOnFirstCreate: _convertLifecycleEffectTask(life, launchOnFirstCreate),
     launchOnFirstStart: _convertLifecycleEffectTask(life, launchOnFirstStart),
     launchOnFirstResume: _convertLifecycleEffectTask(life, launchOnFirstResume),
+    launchOnDestroy: _convertLifecycleEffectTask(life, launchOnDestroy),
     repeatOnStarted: _convertLifecycleEffectTask(life, repeatOnStarted),
     repeatOnResumed: _convertLifecycleEffectTask(life, repeatOnResumed),
   );

@@ -22,7 +22,7 @@ dependencies:
 
   cancellable: ^2.0.0
   anlifecycle: ^2.0.3
-  an_lifecycle_cancellable: ^0.0.4
+  an_lifecycle_cancellable: ^0.0.6
   an_lifecycle_viewmodel: any
 
 dev_dependencies:
