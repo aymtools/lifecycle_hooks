@@ -45,6 +45,8 @@ class LifecycleHook extends Hook<void> {
 class _LifecycleHookState extends HookState<void, LifecycleHook> {
   BuildContext? _ctx;
 
+  Element _providerContext() => _ctx as Element;
+
   @override
   void initHook() {
     var hookLifecycle = _hooksLifecycleRegistry[context];
@@ -52,11 +54,8 @@ class _LifecycleHookState extends HookState<void, LifecycleHook> {
     if (hookLifecycle == null) {
       final ctx = context;
       _ctx = context;
-      hookLifecycle = _HookLifecycleRegistry(() => _ctx as Element);
+      hookLifecycle = _HookLifecycleRegistry(_providerContext);
       _hooksLifecycleRegistry[ctx] = hookLifecycle;
-      hookLifecycle.registry.addLifecycleObserver(
-          LifecycleObserver.eventDestroy(
-              () => _hooksLifecycleRegistry.remove(ctx)));
     }
     hookLifecycle._hooks ??= LinkedList();
     hookLifecycle._hooks!.add(_LEntry(this));
@@ -84,6 +83,7 @@ class _LifecycleHookState extends HookState<void, LifecycleHook> {
     var hookLifecycle = _hooksLifecycleRegistry[_ctx];
     if (hookLifecycle?.lastOrNullHook == this) {
       hookLifecycle!.registry.dispose();
+      _hooksLifecycleRegistry.remove(_ctx);
     }
     _ctx = null;
   }
