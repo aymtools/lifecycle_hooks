@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:collection';
 
 import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart';
 import 'package:an_lifecycle_viewmodel/an_lifecycle_viewmodel.dart';
@@ -11,28 +10,21 @@ import 'package:weak_collections/weak_collections.dart' as weak;
 final Map<BuildContext, _HookLifecycleRegistry> _hooksLifecycleRegistry =
     weak.WeakMap();
 
-class _HookLifecycleRegistry {
-  final Element Function() contextProvider;
-  late final LifecycleObserverRegistryDelegate registry;
+class _HookLifecycleRegistry with LifecycleObserverRegistryDelegateMixin {
+  Element Function() contextProvider;
 
-  _HookLifecycleRegistry(this.contextProvider) {
-    registry = LifecycleObserverRegistryDelegate(
-        target: registry, contextProvider: contextProvider);
-  }
+  _HookLifecycleRegistry(this.contextProvider);
 
-  LinkedList<_LEntry>? _hooks;
+  final List<_LifecycleHookState> _hooks = [];
 
   _LifecycleHookState? get firstOrNullHook =>
-      _hooks == null || _hooks!.isEmpty ? null : _hooks!.first.value;
+      _hooks.isEmpty ? null : _hooks.first;
 
   _LifecycleHookState? get lastOrNullHook =>
-      _hooks == null || _hooks!.isEmpty ? null : _hooks!.last.value;
-}
+      _hooks.isEmpty ? null : _hooks.last;
 
-class _LEntry extends LinkedListEntry<_LEntry> {
-  _LEntry(this.value);
-
-  _LifecycleHookState value;
+  @override
+  BuildContext get context => contextProvider();
 }
 
 class LifecycleHook extends Hook<void> {
@@ -45,8 +37,6 @@ class LifecycleHook extends Hook<void> {
 class _LifecycleHookState extends HookState<void, LifecycleHook> {
   BuildContext? _ctx;
 
-  Element _providerContext() => _ctx as Element;
-
   @override
   void initHook() {
     var hookLifecycle = _hooksLifecycleRegistry[context];
@@ -54,14 +44,14 @@ class _LifecycleHookState extends HookState<void, LifecycleHook> {
     if (hookLifecycle == null) {
       final ctx = context;
       _ctx = context;
-      hookLifecycle = _HookLifecycleRegistry(_providerContext);
+      hookLifecycle = _HookLifecycleRegistry(() => _ctx as Element);
       _hooksLifecycleRegistry[ctx] = hookLifecycle;
     }
-    hookLifecycle._hooks ??= LinkedList();
-    hookLifecycle._hooks!.add(_LEntry(this));
+
+    hookLifecycle._hooks.add(this);
 
     if (hookLifecycle.firstOrNullHook == this) {
-      hookLifecycle.registry.initState();
+      hookLifecycle.lifecycleDelegate.initState();
     }
   }
 
@@ -70,8 +60,9 @@ class _LifecycleHookState extends HookState<void, LifecycleHook> {
     var hookLifecycle = _hooksLifecycleRegistry[context];
     _ctx = context;
 
-    if (hookLifecycle?.firstOrNullHook == this) {
-      hookLifecycle!.registry.didChangeDependencies();
+    if (hookLifecycle?.firstOrNullHook == this &&
+        hookLifecycle!.currentLifecycleState < LifecycleState.started) {
+      hookLifecycle.lifecycleDelegate.didChangeDependencies();
     }
   }
 
@@ -81,8 +72,9 @@ class _LifecycleHookState extends HookState<void, LifecycleHook> {
 
     ///等待最后一个hook销毁时 销毁lifecycle
     var hookLifecycle = _hooksLifecycleRegistry[_ctx];
+    hookLifecycle?._hooks.remove(this);
     if (hookLifecycle?.lastOrNullHook == this) {
-      hookLifecycle!.registry.dispose();
+      hookLifecycle!.lifecycleDelegate.dispose();
       _hooksLifecycleRegistry.remove(_ctx);
     }
     _ctx = null;
@@ -91,7 +83,7 @@ class _LifecycleHookState extends HookState<void, LifecycleHook> {
 
 LifecycleObserverRegistry useLifecycle() {
   use(const LifecycleHook());
-  return _hooksLifecycleRegistry[useContext()]!.registry;
+  return _hooksLifecycleRegistry[useContext()]!;
 }
 
 typedef LifecycleEffectTask<T> = FutureOr Function(
