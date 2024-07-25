@@ -7,6 +7,46 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:weak_collections/weak_collections.dart' as weak;
 
+/// A [Widget] that can use a [Hook].
+///
+/// Its usage is very similar to [StatelessWidget].
+/// [HookWidget] does not have any life cycle and only implements
+/// the [build] method.
+///
+/// The difference is that it can use a [Hook], which allows a
+/// [HookWidget] to store mutable data without implementing a [State].
+abstract class LHookWidget extends StatelessWidget {
+  /// Initializes [key] for subclasses.
+  const LHookWidget({super.key});
+
+  @override
+  StatelessElement createElement() => _StatelessHookElement(this);
+}
+
+class _StatelessHookElement extends StatelessElement
+    with HookElement, LifecycleObserverRegistryElementMixin {
+  _StatelessHookElement(LHookWidget super.hooks);
+}
+
+/// A [StatefulWidget] that can use a [Hook].
+///
+/// Its usage is very similar to that of [StatefulWidget], but uses hooks inside [State.build].
+///
+/// The difference is that it can use a [Hook], which allows a
+/// [HookWidget] to store mutable data without implementing a [State].
+abstract class LStatefulHookWidget extends StatefulWidget {
+  /// Initializes [key] for subclasses.
+  const LStatefulHookWidget({super.key});
+
+  @override
+  StatefulElement createElement() => _StatefulHookElement(this);
+}
+
+class _StatefulHookElement extends StatefulElement
+    with HookElement, LifecycleObserverRegistryElementMixin {
+  _StatefulHookElement(LStatefulHookWidget super.hooks);
+}
+
 final Map<BuildContext, _HookLifecycleRegistry> _hooksLifecycleRegistry =
     weak.WeakMap();
 
@@ -82,8 +122,15 @@ class _LifecycleHookState extends HookState<void, LifecycleHook> {
 }
 
 LifecycleObserverRegistry useLifecycle() {
+  final context = useContext();
+  if (context is LifecycleObserverRegistry) {
+    return context as LifecycleObserverRegistry;
+  } else if (context is StatefulElement &&
+      context.state is LifecycleObserverRegistry) {
+    return (context.state as LifecycleObserverRegistry);
+  }
   use(const LifecycleHook());
-  return _hooksLifecycleRegistry[useContext()]!;
+  return _hooksLifecycleRegistry[context]!;
 }
 
 typedef LifecycleEffectTask<T> = FutureOr Function(
