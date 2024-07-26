@@ -136,6 +136,19 @@ LifecycleObserverRegistry useLifecycle() {
 typedef LifecycleEffectTask<T> = FutureOr Function(
     LifecycleObserverRegistry lifecycle, T data);
 
+class _LifecycleEffectKey {
+  final Object? key;
+
+  _LifecycleEffectKey(this.key);
+
+  @override
+  int get hashCode => Object.hash(_LifecycleEffectKey, key.hashCode);
+
+  @override
+  bool operator ==(Object other) =>
+      other is _LifecycleEffectKey && other.key == key;
+}
+
 T useLifecycleEffect<T extends Object>({
   T? data,
   T Function()? factory,
@@ -146,12 +159,13 @@ T useLifecycleEffect<T extends Object>({
   LifecycleEffectTask<T>? launchOnDestroy,
   LifecycleEffectTask<T>? repeatOnStarted,
   LifecycleEffectTask<T>? repeatOnResumed,
+  Object? key,
 }) {
   final life = useLifecycle();
 
   return life.withLifecycleEffect(
     factory: () => life.lifecycleExtData.putIfAbsent(
-        TypedKey<T>(useLifecycleEffect),
+        TypedKey<T>(_LifecycleEffectKey(key)),
         () => data ?? factory?.call() ?? factory2!.call(life)),
     launchOnFirstCreate: _convertLifecycleEffectTask(life, launchOnFirstCreate),
     launchOnFirstStart: _convertLifecycleEffectTask(life, launchOnFirstStart),
