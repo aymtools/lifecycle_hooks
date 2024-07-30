@@ -67,6 +67,7 @@ class _HookLifecycleRegistry with LifecycleObserverRegistryDelegateMixin {
   BuildContext get context => contextProvider();
 }
 
+///  将hook的内容转换为lifecycle
 class LifecycleHook extends Hook<void> {
   const LifecycleHook();
 
@@ -121,6 +122,7 @@ class _LifecycleHookState extends HookState<void, LifecycleHook> {
   }
 }
 
+///使用lifecycle相关
 LifecycleObserverRegistry useLifecycle() {
   final context = useContext();
   if (context is LifecycleObserverRegistry) {
@@ -149,6 +151,7 @@ class _LifecycleEffectKey {
       other is _LifecycleEffectKey && other.key == key;
 }
 
+/// 对于某个对象及其类型 在生命周期事件中执行
 T useLifecycleEffect<T extends Object>({
   T? data,
   T Function()? factory,
@@ -176,6 +179,7 @@ T useLifecycleEffect<T extends Object>({
   );
 }
 
+/// 对于ViewModel 在生命周期事件中执行
 VM useLifecycleViewModelEffect<VM extends ViewModel>({
   VM? data,
   VM Function()? factory,

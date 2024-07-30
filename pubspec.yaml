@@ -5,9 +5,10 @@ homepage: https://github.com/aymtools/lifecycle_hooks/
 issue_tracker: https://github.com/aymtools/lifecycle_hooks/issues
 
 topics:
-  - flutter_hooks
+  - hooks-lifecycle
+  - use-lifecycle
   - anlifecycle
-  - viewModel
+  - use-lifecycle-view-model
 
 environment:
   sdk: '>=2.17.0 <4.0.0'
@@ -23,13 +24,9 @@ dependencies:
   cancellable: ^2.0.0
   anlifecycle: ^2.0.3
   an_lifecycle_cancellable: ^0.0.6
-  an_lifecycle_viewmodel: any
+  an_lifecycle_viewmodel: ^0.0.1
 
 dev_dependencies:
   flutter_lints: ^4.0.0
-
-dependency_overrides:
-  an_lifecycle_viewmodel:
-    path: ../lifecycle_viewmodel
 
 flutter:
