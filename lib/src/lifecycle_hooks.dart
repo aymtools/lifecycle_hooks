@@ -122,21 +122,26 @@ class _LifecycleHookState extends HookState<void, LifecycleHook> {
   }
 }
 
-///使用lifecycle相关
-LifecycleObserverRegistry useLifecycle() {
+///使用lifecycleRegistry相关
+ILifecycleRegistry useLifecycleRegistry() {
   final context = useContext();
-  if (context is LifecycleObserverRegistry) {
-    return context as LifecycleObserverRegistry;
+  if (context is ILifecycleRegistry) {
+    return context as ILifecycleRegistry;
   } else if (context is StatefulElement &&
-      context.state is LifecycleObserverRegistry) {
-    return (context.state as LifecycleObserverRegistry);
+      context.state is ILifecycleRegistry) {
+    return (context.state as ILifecycleRegistry);
   }
   use(const LifecycleHook());
   return _hooksLifecycleRegistry[context]!;
 }
 
-typedef LifecycleEffectTask<T> = FutureOr Function(
-    LifecycleObserverRegistry lifecycle, T data);
+///使用lifecycle相关
+Lifecycle useLifecycle() {
+  final context = useContext();
+  return Lifecycle.of(context);
+}
+
+typedef LifecycleEffectTask<T> = FutureOr Function(Lifecycle lifecycle, T data);
 
 class _LifecycleEffectKey {
   final Object? key;
@@ -155,7 +160,7 @@ class _LifecycleEffectKey {
 T useLifecycleEffect<T extends Object>({
   T? data,
   T Function()? factory,
-  T Function(LifecycleObserverRegistry lifecycle)? factory2,
+  T Function(Lifecycle lifecycle)? factory2,
   LifecycleEffectTask<T>? launchOnFirstCreate,
   LifecycleEffectTask<T>? launchOnFirstStart,
   LifecycleEffectTask<T>? launchOnFirstResume,
@@ -183,7 +188,7 @@ T useLifecycleEffect<T extends Object>({
 VM useLifecycleViewModelEffect<VM extends ViewModel>({
   VM? data,
   VM Function()? factory,
-  VM Function(LifecycleObserverRegistry lifecycle)? factory2,
+  VM Function(Lifecycle lifecycle)? factory2,
   LifecycleEffectTask<VM>? launchOnFirstCreate,
   LifecycleEffectTask<VM>? launchOnFirstStart,
   LifecycleEffectTask<VM>? launchOnFirstResume,
@@ -192,21 +197,21 @@ VM useLifecycleViewModelEffect<VM extends ViewModel>({
   LifecycleEffectTask<VM>? repeatOnResumed,
 }) {
   final life = useLifecycle();
-  VM Function()? vmFactory;
+  VM Function(Lifecycle)? vmFactory;
   if (data != null) {
-    vmFactory = () => data;
+    vmFactory = (_) => data;
   }
   if (vmFactory == null && factory != null) {
-    vmFactory = factory;
+    vmFactory = (_) => factory();
   }
   if (vmFactory == null && factory2 != null) {
-    vmFactory = () => factory2(life);
+    vmFactory = factory2;
   }
 
   return life.withLifecycleEffect(
     factory: () => life.lifecycleExtData.putIfAbsent(
         TypedKey<VM>(useLifecycleViewModelEffect),
-        () => life.viewModels(factory: vmFactory)),
+        () => life.owner.viewModels(factory2: vmFactory)),
     launchOnFirstCreate: _convertLifecycleEffectTask(life, launchOnFirstCreate),
     launchOnFirstStart: _convertLifecycleEffectTask(life, launchOnFirstStart),
     launchOnFirstResume: _convertLifecycleEffectTask(life, launchOnFirstResume),
@@ -217,6 +222,5 @@ VM useLifecycleViewModelEffect<VM extends ViewModel>({
 }
 
 FutureOr Function(T data)? _convertLifecycleEffectTask<T>(
-        LifecycleObserverRegistry lifecycle,
-        FutureOr Function(LifecycleObserverRegistry, T)? callback) =>
+        Lifecycle lifecycle, FutureOr Function(Lifecycle, T)? callback) =>
     callback == null ? null : (data) => callback(lifecycle, data);
