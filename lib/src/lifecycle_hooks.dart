@@ -24,7 +24,7 @@ abstract class LHookWidget extends StatelessWidget {
 }
 
 class _StatelessHookElement extends StatelessElement
-    with HookElement, LifecycleObserverRegistryElementMixin {
+    with HookElement, LifecycleRegistryElementMixin {
   _StatelessHookElement(LHookWidget super.hooks);
 }
 
@@ -43,14 +43,14 @@ abstract class LStatefulHookWidget extends StatefulWidget {
 }
 
 class _StatefulHookElement extends StatefulElement
-    with HookElement, LifecycleObserverRegistryElementMixin {
+    with HookElement, LifecycleRegistryElementMixin {
   _StatefulHookElement(LStatefulHookWidget super.hooks);
 }
 
 final Map<BuildContext, _HookLifecycleRegistry> _hooksLifecycleRegistry =
     weak.WeakMap();
 
-class _HookLifecycleRegistry with LifecycleObserverRegistryDelegateMixin {
+class _HookLifecycleRegistry with LifecycleRegistryDelegateMixin {
   Element Function() contextProvider;
 
   _HookLifecycleRegistry(this.contextProvider);
@@ -92,6 +92,7 @@ class _LifecycleHookState extends HookState<void, LifecycleHook> {
     hookLifecycle._hooks.add(this);
 
     if (hookLifecycle.firstOrNullHook == this) {
+      //ignore
       hookLifecycle.lifecycleDelegate.initState();
     }
   }
