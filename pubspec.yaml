@@ -1,6 +1,6 @@
 name: an_lifecycle_hooks
 description: "A middleware for connecting flutter_hooks and anlifecycle."
-version: 1.0.0
+version: 1.0.1
 homepage: https://github.com/aymtools/lifecycle_hooks/
 issue_tracker: https://github.com/aymtools/lifecycle_hooks/issues
 
@@ -19,7 +19,7 @@ dependencies:
     sdk: flutter
 
   weak_collections: ^1.1.0
-  flutter_hooks: ^0.20.5
+  flutter_hooks: ^0.18.4
 
   cancellable: ^2.0.1
   anlifecycle: ^3.0.0
