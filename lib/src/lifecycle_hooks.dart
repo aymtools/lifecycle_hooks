@@ -158,6 +158,7 @@ class _LifecycleEffectKey {
 }
 
 /// 对于某个对象及其类型 在生命周期事件中执行
+/// 取当前lifecycle环境中类型唯一的对象 与 其他的hook中的use不同
 T useLifecycleEffect<T extends Object>({
   T? data,
   T Function()? factory,
@@ -186,6 +187,7 @@ T useLifecycleEffect<T extends Object>({
 }
 
 /// 对于ViewModel 在生命周期事件中执行
+/// 取当前lifecycle环境中类型唯一的ViewModel对象 与 其他的hook中的use不同
 VM useLifecycleViewModelEffect<VM extends ViewModel>({
   VM? data,
   VM Function()? factory,
@@ -196,23 +198,31 @@ VM useLifecycleViewModelEffect<VM extends ViewModel>({
   LifecycleEffectTask<VM>? launchOnDestroy,
   LifecycleEffectTask<VM>? repeatOnStarted,
   LifecycleEffectTask<VM>? repeatOnResumed,
+  ViewModelProvider Function(Lifecycle)? viewModelProvider,
 }) {
   final life = useLifecycle();
-  VM Function(Lifecycle)? vmFactory;
-  if (data != null) {
-    vmFactory = (_) => data;
-  }
-  if (vmFactory == null && factory != null) {
-    vmFactory = (_) => factory();
-  }
-  if (vmFactory == null && factory2 != null) {
-    vmFactory = factory2;
-  }
-
   return life.withLifecycleEffect(
-    factory: () => life.lifecycleExtData.putIfAbsent(
-        TypedKey<VM>(useLifecycleViewModelEffect),
-        () => life.owner.viewModels(factory2: vmFactory)),
+    factory: () => life.lifecycleExtData
+        .putIfAbsent(TypedKey<VM>(useLifecycleViewModelEffect), () {
+      VM Function(Lifecycle)? vmFactory;
+      if (data != null) {
+        vmFactory = (_) => data;
+      }
+      if (vmFactory == null && factory != null) {
+        vmFactory = (_) => factory();
+      }
+      if (vmFactory == null && factory2 != null) {
+        vmFactory = factory2;
+      }
+      if (viewModelProvider != null) {
+        final provider = viewModelProvider(life);
+        if (vmFactory != null) {
+          provider.addFactory2<VM>(vmFactory);
+        }
+        return provider.get<VM>();
+      }
+      return life.owner.viewModels<VM>(factory2: vmFactory);
+    }),
     launchOnFirstCreate: _convertLifecycleEffectTask(life, launchOnFirstCreate),
     launchOnFirstStart: _convertLifecycleEffectTask(life, launchOnFirstStart),
     launchOnFirstResume: _convertLifecycleEffectTask(life, launchOnFirstResume),

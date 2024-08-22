@@ -1,17 +1,22 @@
-A toolkit that introduces lifecycle events from the AnLifecycle library into the hooks library
+import 'dart:async';
 
-## Usage
+import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart';
+import 'package:an_lifecycle_hooks/an_lifecycle_hooks.dart';
+import 'package:an_lifecycle_viewmodel/an_lifecycle_viewmodel.dart';
+import 'package:anlifecycle/anlifecycle.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 
-#### 1.1 Prepare the lifecycle environment.
-
-```dart
+void main() {
+  ViewModelProvider.addDefFactory2(ViewModelHome.new);
+  runApp(const MyApp());
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Use LifecycleApp to wrap the default App
     return LifecycleApp(
       child: MaterialApp(
         title: 'Lifecycle Hook Demo',
@@ -19,21 +24,13 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.blue,
         ),
         navigatorObservers: [
-          //Use LifecycleNavigatorObserver.hookMode() to register routing event changes
           LifecycleNavigatorObserver.hookMode(),
         ],
-        home: const MyHomePage(title: 'Lifecycle Hook Home Page'),
+        home: const MyHomePage(title: 'Lifecycle Hook Demo Home Page'),
       ),
     );
   }
 }
-```
-
-#### 1.2 Use useLifecycle useLifecycleEffect
-
-You can also use viewmodel related content with useLifecycleViewModelEffect
-
-```dart 
 
 class ViewModelHome with ViewModel {
   final ValueNotifier<int> counter = ValueNotifier<int>(0);
@@ -55,9 +52,7 @@ class MyHomePage extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final stayed = useLifecycleEffect<ValueNotifier<int>>(
-      factory2: (l) =>
-      ValueNotifier(0)
-        ..bindLifecycle(l),
+      factory2: (l) => ValueNotifier(0)..bindLifecycle(l),
       launchOnFirstStart: (l, d) {
         Stream.periodic(const Duration(seconds: 1))
             .bindLifecycle(l, repeatLastOnRestart: true)
@@ -65,8 +60,7 @@ class MyHomePage extends HookWidget {
       },
     );
     useListenable(stayed);
-    //需要之前存在VM的factory
-    //例如  ViewModelProvider.addDefFactory2(ViewModelHome.new);
+
     final viewModel = useLifecycleViewModelEffect<ViewModelHome>();
     // 也可使用 当前注册的构建工厂
     // final viewModel =
@@ -89,10 +83,7 @@ class MyHomePage extends HookWidget {
             ),
             Text(
               '${counter.value}',
-              style: Theme
-                  .of(context)
-                  .textTheme
-                  .headlineMedium,
+              style: Theme.of(context).textTheme.headlineMedium,
             ),
           ],
         ),
@@ -115,16 +106,3 @@ class HomeFloatingButton extends HookWidget {
     );
   }
 }
-```
-
-## Additional information
-
-See [cancelable](https://github.com/aymtools/cancelable/)
-
-See [anlifecycle](https://github.com/aymtools/lifecycle/)
-
-See [an_lifecycle_cancellable](https://github.com/aymtools/lifecycle_cancellable/)
-
-See [an_lifecycle_viewmodel](https://github.com/aymtools/lifecycle_viewmodel/)
-
-See [flutter_hooks](https://pub.dev/packages/flutter_hooks)

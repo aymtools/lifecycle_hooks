@@ -1,3 +1,7 @@
+## 1.0.2
+
+* Improve the dependency of lifecycle library
+
 ## 1.0.1
 
 * Reduce the dependency of flutter_hooks(^0.18.4)
