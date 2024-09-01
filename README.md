@@ -29,61 +29,91 @@ class MyApp extends StatelessWidget {
 }
 ```
 
+The current usage of PageView and TabBarViewPageView should be replaced with LifecyclePageView and
+LifecycleTabBarView. Alternatively, you can wrap the items with LifecyclePageViewItem. You can refer
+to [anlifecycle](https://pub.dev/packages/anlifecycle) for guidance.
+
 #### 1.2 Use useLifecycle useLifecycleEffect
 
-You can also use viewmodel related content with useLifecycleViewModelEffect
+```dart
+class HomeService {
+  final ValueNotifier<int> stayed = ValueNotifier<int>(0);
+
+  HomeService(Lifecycle lifecycle) {
+    // 在可见的时间 每秒增加1  不可见时不增加
+    Stream.periodic(const Duration(seconds: 1))
+        .bindLifecycle(lifecycle, repeatLastOnRestart: true)
+        .listen((event) => stayed.value++);
+  }
+}
+
+class HomePage extends HookWidget {
+  const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // 单独使用lifecycle
+    final homeService =
+    useLifecycleEffect<HomeService>(factory2: HomeService.new);
+    // hooks 处理变化
+    final stayed = useListenable(homeService.stayed);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Lifecycle Hook Demo Home Page'),
+      ),
+      body: Center(
+        child: Text(
+          'Stayed on this page for:${stayed.value} s',
+        ),
+      ),
+    );
+  }
+}
+```
+
+#### 1.3 You can use useLifecycleViewModelEffect to directly work with ViewModel-related functionality.
 
 ```dart 
 
+class ViewModelApp with ViewModel {
+  int incrementStep = 1;
+}
+
 class ViewModelHome with ViewModel {
   final ValueNotifier<int> counter = ValueNotifier<int>(0);
+  final ViewModelApp appModel;
 
-  ViewModelHome(Lifecycle lifecycle) {
+  //  可以从lifecycle中之前获取已存在的ViewModel
+  ViewModelHome(Lifecycle lifecycle) : appModel = lifecycle.viewModelsByApp() {
+    //将ValueNotifier 绑定到Lifecycle 自动调用dispose
     counter.bindLifecycle(lifecycle);
   }
 
   void incrementCounter() {
-    counter.value++;
+    counter.value += appModel.incrementStep;
   }
 }
 
-class MyHomePage extends HookWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
+class ViewModelHomePage extends HookWidget {
+  const ViewModelHomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final stayed = useLifecycleEffect<ValueNotifier<int>>(
-      factory2: (l) =>
-      ValueNotifier(0)
-        ..bindLifecycle(l),
-      launchOnFirstStart: (l, d) {
-        Stream.periodic(const Duration(seconds: 1))
-            .bindLifecycle(l, repeatLastOnRestart: true)
-            .listen((event) => d.value++);
-      },
-    );
-    useListenable(stayed);
-    //需要之前存在VM的factory
-    //例如  ViewModelProvider.addDefFactory2(ViewModelHome.new);
-    final viewModel = useLifecycleViewModelEffect<ViewModelHome>();
-    // 也可使用 当前注册的构建工厂
-    // final viewModel =
-    //     useLifecycleViewModelEffect<ViewModelHome>(factory2: ViewModelHome.new);
+    // 使用viewmodel
+    final viewModel =
+    useLifecycleViewModelEffect<ViewModelHome>(factory2: ViewModelHome.new);
+
+    // hooks 处理变化
     final counter = useListenable(viewModel.counter);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text('ViewModel Hook Demo Home Page'),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              'Stayed on this page for:${stayed.value} s',
-            ),
             const Text(
               'You have pushed the button this many times:',
             ),
@@ -102,11 +132,13 @@ class MyHomePage extends HookWidget {
   }
 }
 
+/// 模拟这是另一个widget 需要使用MyHomePage中的同一个ViewModel
 class HomeFloatingButton extends HookWidget {
   const HomeFloatingButton({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // 如果提前已经注册过或者确定已经存在对象则可以直接使用
     final vm = useLifecycleViewModelEffect<ViewModelHome>();
     return FloatingActionButton(
       onPressed: vm.incrementCounter,
@@ -115,16 +147,17 @@ class HomeFloatingButton extends HookWidget {
     );
   }
 }
+
 ```
 
 ## Additional information
 
-See [cancelable](https://github.com/aymtools/cancelable/)
+See [cancelable](https://pub.dev/packages/cancellable)
 
-See [anlifecycle](https://github.com/aymtools/lifecycle/)
+See [anlifecycle](https://pub.dev/packages/anlifecycle)
 
-See [an_lifecycle_cancellable](https://github.com/aymtools/lifecycle_cancellable/)
+See [an_lifecycle_cancellable](https://pub.dev/packages/an_lifecycle_cancellable)
 
-See [an_lifecycle_viewmodel](https://github.com/aymtools/lifecycle_viewmodel/)
+See [an_lifecycle_viewmodel](https://pub.dev/packages/an_lifecycle_viewmodel)
 
 See [flutter_hooks](https://pub.dev/packages/flutter_hooks)

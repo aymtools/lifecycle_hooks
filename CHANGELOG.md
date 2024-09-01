@@ -1,3 +1,7 @@
+## 1.0.3
+
+* Optimize the README content and update the example
+
 ## 1.0.2
 
 * Improve the dependency of lifecycle library
