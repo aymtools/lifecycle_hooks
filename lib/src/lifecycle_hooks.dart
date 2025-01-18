@@ -103,7 +103,8 @@ class _LifecycleHookState extends HookState<void, _LifecycleRegistryHook> {
   }
 }
 
-///使用lifecycleRegistry相关
+/// 使用lifecycleRegistry相关
+/// 调用多次时 返回同一个
 ILifecycleRegistry useLifecycleRegistry() {
   final context = useContext();
   if (context is ILifecycleRegistry) {
@@ -116,7 +117,8 @@ ILifecycleRegistry useLifecycleRegistry() {
   return _hooksLifecycleRegistry[context]!;
 }
 
-///使用lifecycle相关
+/// 使用lifecycle相关
+/// 调用多次时 返回同一个
 Lifecycle useLifecycle() {
   final context = useContext();
   return Lifecycle.of(context);
@@ -124,8 +126,12 @@ Lifecycle useLifecycle() {
 
 typedef LifecycleEffectTask<T> = FutureOr Function(Lifecycle lifecycle, T data);
 
-/// 对于某个对象及其类型 在生命周期事件中执行
-/// 取当前 lifecycle 环境中类型唯一的对象 与 其他的 hook 中的 use不同
+final _keyLifecycleEffect = Object();
+
+/// 对于某个对象及其 Type 在生命周期事件中执行
+/// 取当前 lifecycle 环境中 Type 唯一的对象 与 其他的 hook 中的 use不同
+/// 调用多次时 返回同一个（第一次创建的那一个）
+/// 将会抬高 改对象的引用 直到 lifecycle 的销毁时
 T useLifecycleEffect<T extends Object>({
   T? data,
   T Function()? factory,
@@ -138,10 +144,20 @@ T useLifecycleEffect<T extends Object>({
   LifecycleEffectTask<T>? repeatOnResumed,
   Object? key,
 }) {
+  assert(data != null || factory != null || factory2 != null,
+      'data and factory and factory2 cannot be null at the same time');
+  if (factory2 == null) {
+    if (factory != null) {
+      factory2 = (_) => factory();
+    }
+    if (data != null) {
+      factory2 = (_) => data;
+    }
+  }
+
   return useContext().withLifecycleEffectData(
-    data: data,
-    factory: factory,
-    factory2: factory2,
+    factory2: (l) =>
+        l.extData.getOrPut<T>(key: _keyLifecycleEffect, ifAbsent: factory2!),
     key: key,
     launchOnFirstCreate: launchOnFirstCreate,
     launchOnFirstStart: launchOnFirstStart,
@@ -170,14 +186,13 @@ VM useLifecycleViewModelEffect<VM extends ViewModel>({
   ViewModelProvider Function(Lifecycle)? viewModelProvider,
   ViewModelProvider Function(LifecycleOwner lifecycleOwner)? viewModelProvider2,
 }) {
-  return useLifecycleEffect(
-    data: data,
+  return useContext().withLifecycleEffectData(
     factory2: (lifecycle) {
       if (viewModelProvider != null && viewModelProvider2 == null) {
         viewModelProvider2 = (owner) => viewModelProvider(owner.lifecycle);
       }
       return lifecycle.viewModels(
-          factory: factory,
+          factory: data == null ? factory : () => data,
           factory2: factory2,
           viewModelProvider: viewModelProvider2);
     },
