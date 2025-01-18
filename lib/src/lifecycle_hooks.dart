@@ -5,7 +5,7 @@ import 'package:an_lifecycle_viewmodel/an_lifecycle_viewmodel.dart';
 import 'package:anlifecycle/anlifecycle.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:weak_collections/weak_collections.dart' as weak;
+import 'package:weak_collections/weak_collections.dart';
 
 /// A [Widget] that can use a [Hook].
 ///
@@ -48,7 +48,7 @@ class _StatefulHookElement extends StatefulElement
 }
 
 final Map<BuildContext, _HookLifecycleRegistry> _hooksLifecycleRegistry =
-    weak.WeakMap();
+    WeakHashMap();
 
 class _HookLifecycleRegistry with LifecycleRegistryDelegateMixin {
   Element Function() contextProvider;
@@ -174,7 +174,7 @@ T useLifecycleEffect<T extends Object>({
   final life = useLifecycle();
 
   return life.withLifecycleEffect(
-    factory: () => life.lifecycleExtData.putIfAbsent(
+    factory: () => life.extData.putIfAbsent(
         TypedKey<T>(_LifecycleEffectKey(key)),
         () => data ?? factory?.call() ?? factory2!.call(life)),
     launchOnFirstCreate: _convertLifecycleEffectTask(life, launchOnFirstCreate),
@@ -202,7 +202,7 @@ VM useLifecycleViewModelEffect<VM extends ViewModel>({
 }) {
   final life = useLifecycle();
   return life.withLifecycleEffect(
-    factory: () => life.lifecycleExtData
+    factory: () => life.extData
         .putIfAbsent(TypedKey<VM>(useLifecycleViewModelEffect), () {
       VM Function(Lifecycle)? vmFactory;
       if (data != null) {

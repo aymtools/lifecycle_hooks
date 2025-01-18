@@ -1,3 +1,7 @@
+## 1.1.0
+
+* Upgrading Dependencies.
+
 ## 1.0.3
 
 * Optimize the README content and update the example
