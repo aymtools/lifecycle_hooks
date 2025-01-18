@@ -1,51 +1,17 @@
 import 'dart:async';
 
 import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart';
-import 'package:an_lifecycle_viewmodel/an_lifecycle_viewmodel.dart';
+import 'package:an_viewmodel/an_viewmodel.dart';
 import 'package:anlifecycle/anlifecycle.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:weak_collections/weak_collections.dart';
 
-/// A [Widget] that can use a [Hook].
-///
-/// Its usage is very similar to [StatelessWidget].
-/// [HookWidget] does not have any life cycle and only implements
-/// the [build] method.
-///
-/// The difference is that it can use a [Hook], which allows a
-/// [HookWidget] to store mutable data without implementing a [State].
-abstract class LHookWidget extends StatelessWidget {
-  /// Initializes [key] for subclasses.
-  const LHookWidget({super.key});
+@Deprecated('use HookWidget')
+typedef LHookWidget = HookWidget;
 
-  @override
-  StatelessElement createElement() => _StatelessHookElement(this);
-}
-
-class _StatelessHookElement extends StatelessElement
-    with HookElement, LifecycleRegistryElementMixin {
-  _StatelessHookElement(LHookWidget super.hooks);
-}
-
-/// A [StatefulWidget] that can use a [Hook].
-///
-/// Its usage is very similar to that of [StatefulWidget], but uses hooks inside [State.build].
-///
-/// The difference is that it can use a [Hook], which allows a
-/// [HookWidget] to store mutable data without implementing a [State].
-abstract class LStatefulHookWidget extends StatefulWidget {
-  /// Initializes [key] for subclasses.
-  const LStatefulHookWidget({super.key});
-
-  @override
-  StatefulElement createElement() => _StatefulHookElement(this);
-}
-
-class _StatefulHookElement extends StatefulElement
-    with HookElement, LifecycleRegistryElementMixin {
-  _StatefulHookElement(LStatefulHookWidget super.hooks);
-}
+@Deprecated('use StatefulHookWidget')
+typedef LStatefulHookWidget = StatefulHookWidget;
 
 final Map<BuildContext, _HookLifecycleRegistry> _hooksLifecycleRegistry =
     WeakHashMap();
@@ -65,17 +31,33 @@ class _HookLifecycleRegistry with LifecycleRegistryDelegateMixin {
 
   @override
   BuildContext get context => contextProvider();
+
+  void initState() {
+    lifecycleDelegate.initState();
+  }
+
+  void didChangeDependencies() {
+    lifecycleDelegate.didChangeDependencies();
+  }
+
+  void dispose() {
+    lifecycleDelegate.dispose();
+  }
 }
 
+//
+@Deprecated('will remove')
+typedef LifecycleHook = _LifecycleRegistryHook;
+
 ///  将hook的内容转换为lifecycle
-class LifecycleHook extends Hook<void> {
-  const LifecycleHook();
+class _LifecycleRegistryHook extends Hook<void> {
+  const _LifecycleRegistryHook();
 
   @override
   HookState<void, Hook<void>> createState() => _LifecycleHookState();
 }
 
-class _LifecycleHookState extends HookState<void, LifecycleHook> {
+class _LifecycleHookState extends HookState<void, _LifecycleRegistryHook> {
   BuildContext? _ctx;
 
   @override
@@ -84,16 +66,15 @@ class _LifecycleHookState extends HookState<void, LifecycleHook> {
 
     if (hookLifecycle == null) {
       final ctx = context;
-      _ctx = context;
-      hookLifecycle = _HookLifecycleRegistry(() => _ctx as Element);
+      _ctx = ctx;
+      hookLifecycle = _HookLifecycleRegistry(() => ctx as Element);
       _hooksLifecycleRegistry[ctx] = hookLifecycle;
     }
 
     hookLifecycle._hooks.add(this);
 
     if (hookLifecycle.firstOrNullHook == this) {
-      //ignore
-      hookLifecycle.lifecycleDelegate.initState();
+      hookLifecycle.initState();
     }
   }
 
@@ -102,9 +83,8 @@ class _LifecycleHookState extends HookState<void, LifecycleHook> {
     var hookLifecycle = _hooksLifecycleRegistry[context];
     _ctx = context;
 
-    if (hookLifecycle?.firstOrNullHook == this &&
-        hookLifecycle!.currentLifecycleState < LifecycleState.started) {
-      hookLifecycle.lifecycleDelegate.didChangeDependencies();
+    if (hookLifecycle?.firstOrNullHook == this) {
+      hookLifecycle?.didChangeDependencies();
     }
   }
 
@@ -116,7 +96,7 @@ class _LifecycleHookState extends HookState<void, LifecycleHook> {
     var hookLifecycle = _hooksLifecycleRegistry[_ctx];
     hookLifecycle?._hooks.remove(this);
     if (hookLifecycle?.lastOrNullHook == this) {
-      hookLifecycle!.lifecycleDelegate.dispose();
+      hookLifecycle!.dispose();
       _hooksLifecycleRegistry.remove(_ctx);
     }
     _ctx = null;
@@ -132,7 +112,7 @@ ILifecycleRegistry useLifecycleRegistry() {
       context.state is ILifecycleRegistry) {
     return (context.state as ILifecycleRegistry);
   }
-  use(const LifecycleHook());
+  use(const _LifecycleRegistryHook());
   return _hooksLifecycleRegistry[context]!;
 }
 
@@ -144,21 +124,8 @@ Lifecycle useLifecycle() {
 
 typedef LifecycleEffectTask<T> = FutureOr Function(Lifecycle lifecycle, T data);
 
-class _LifecycleEffectKey {
-  final Object? key;
-
-  _LifecycleEffectKey(this.key);
-
-  @override
-  int get hashCode => Object.hash(_LifecycleEffectKey, key.hashCode);
-
-  @override
-  bool operator ==(Object other) =>
-      other is _LifecycleEffectKey && other.key == key;
-}
-
 /// 对于某个对象及其类型 在生命周期事件中执行
-/// 取当前lifecycle环境中类型唯一的对象 与 其他的hook中的use不同
+/// 取当前 lifecycle 环境中类型唯一的对象 与 其他的 hook 中的 use不同
 T useLifecycleEffect<T extends Object>({
   T? data,
   T Function()? factory,
@@ -171,23 +138,25 @@ T useLifecycleEffect<T extends Object>({
   LifecycleEffectTask<T>? repeatOnResumed,
   Object? key,
 }) {
-  final life = useLifecycle();
-
-  return life.withLifecycleEffect(
-    factory: () => life.extData.putIfAbsent(
-        TypedKey<T>(_LifecycleEffectKey(key)),
-        () => data ?? factory?.call() ?? factory2!.call(life)),
-    launchOnFirstCreate: _convertLifecycleEffectTask(life, launchOnFirstCreate),
-    launchOnFirstStart: _convertLifecycleEffectTask(life, launchOnFirstStart),
-    launchOnFirstResume: _convertLifecycleEffectTask(life, launchOnFirstResume),
-    launchOnDestroy: _convertLifecycleEffectTask(life, launchOnDestroy),
-    repeatOnStarted: _convertLifecycleEffectTask(life, repeatOnStarted),
-    repeatOnResumed: _convertLifecycleEffectTask(life, repeatOnResumed),
+  return useContext().withLifecycleEffectData(
+    data: data,
+    factory: factory,
+    factory2: factory2,
+    key: key,
+    launchOnFirstCreate: launchOnFirstCreate,
+    launchOnFirstStart: launchOnFirstStart,
+    launchOnFirstResume: launchOnFirstResume,
+    launchOnDestroy: launchOnDestroy,
+    repeatOnStarted: repeatOnStarted,
+    repeatOnResumed: repeatOnResumed,
   );
 }
 
-/// 对于ViewModel 在生命周期事件中执行
-/// 取当前lifecycle环境中类型唯一的ViewModel对象 与 其他的hook中的use不同
+final _keyLifecycleViewModelEffect = Object();
+
+/// 对于 ViewModel 在当前生命周期事件中执行
+/// 取当前 环境中唯一的 ViewModel 对象 与 其他的 hook 中的 use 不同
+/// 注意 lifecycle 不一定是管理 ViewModel 的 Lifecycle
 VM useLifecycleViewModelEffect<VM extends ViewModel>({
   VM? data,
   VM Function()? factory,
@@ -199,39 +168,25 @@ VM useLifecycleViewModelEffect<VM extends ViewModel>({
   LifecycleEffectTask<VM>? repeatOnStarted,
   LifecycleEffectTask<VM>? repeatOnResumed,
   ViewModelProvider Function(Lifecycle)? viewModelProvider,
+  ViewModelProvider Function(LifecycleOwner lifecycleOwner)? viewModelProvider2,
 }) {
-  final life = useLifecycle();
-  return life.withLifecycleEffect(
-    factory: () => life.extData
-        .putIfAbsent(TypedKey<VM>(useLifecycleViewModelEffect), () {
-      VM Function(Lifecycle)? vmFactory;
-      if (data != null) {
-        vmFactory = (_) => data;
+  return useLifecycleEffect(
+    data: data,
+    factory2: (lifecycle) {
+      if (viewModelProvider != null && viewModelProvider2 == null) {
+        viewModelProvider2 = (owner) => viewModelProvider(owner.lifecycle);
       }
-      if (vmFactory == null && factory != null) {
-        vmFactory = (_) => factory();
-      }
-      if (vmFactory == null && factory2 != null) {
-        vmFactory = factory2;
-      }
-      if (viewModelProvider != null) {
-        final provider = viewModelProvider(life);
-        if (vmFactory != null) {
-          provider.addFactory2<VM>(vmFactory);
-        }
-        return provider.get<VM>();
-      }
-      return life.owner.viewModels<VM>(factory2: vmFactory);
-    }),
-    launchOnFirstCreate: _convertLifecycleEffectTask(life, launchOnFirstCreate),
-    launchOnFirstStart: _convertLifecycleEffectTask(life, launchOnFirstStart),
-    launchOnFirstResume: _convertLifecycleEffectTask(life, launchOnFirstResume),
-    launchOnDestroy: _convertLifecycleEffectTask(life, launchOnDestroy),
-    repeatOnStarted: _convertLifecycleEffectTask(life, repeatOnStarted),
-    repeatOnResumed: _convertLifecycleEffectTask(life, repeatOnResumed),
+      return lifecycle.viewModels(
+          factory: factory,
+          factory2: factory2,
+          viewModelProvider: viewModelProvider2);
+    },
+    key: _keyLifecycleViewModelEffect,
+    launchOnFirstCreate: launchOnFirstCreate,
+    launchOnFirstStart: launchOnFirstStart,
+    launchOnFirstResume: launchOnFirstResume,
+    launchOnDestroy: launchOnDestroy,
+    repeatOnStarted: repeatOnStarted,
+    repeatOnResumed: repeatOnResumed,
   );
 }
-
-FutureOr Function(T data)? _convertLifecycleEffectTask<T>(
-        Lifecycle lifecycle, FutureOr Function(Lifecycle, T)? callback) =>
-    callback == null ? null : (data) => callback(lifecycle, data);

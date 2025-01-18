@@ -2,14 +2,18 @@ import 'dart:async';
 
 import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart';
 import 'package:an_lifecycle_hooks/an_lifecycle_hooks.dart';
-import 'package:an_lifecycle_viewmodel/an_lifecycle_viewmodel.dart';
+import 'package:an_viewmodel/an_viewmodel.dart';
 import 'package:anlifecycle/anlifecycle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
+class AppViewModel with ViewModel {
+  int incrementStep = 1;
+}
+
 void main() {
   //可提前注册ViewModel的factory
-  ViewModelProvider.addDefFactory(ViewModelApp.new);
+  ViewModelProvider.addDefFactory(AppViewModel.new);
   runApp(const MyApp());
 }
 
@@ -27,33 +31,44 @@ class MyApp extends StatelessWidget {
         navigatorObservers: [
           LifecycleNavigatorObserver.hookMode(),
         ],
-        home: const ViewModelHomePage(),
+        home: const HomeViewModelDemo(),
       ),
     );
   }
 }
 
 class HomeService {
+  final Lifecycle lifecycle;
   final ValueNotifier<int> stayed = ValueNotifier<int>(0);
 
-  HomeService(Lifecycle lifecycle) {
+  HomeService(this.lifecycle) {
+    // stayed ValueNotifier 绑定到生命周期 当生命周期销毁时 自动调用 [ValueNotifier.dispose]
+    stayed.bindLifecycle(lifecycle);
+  }
+
+  void startTicker() {
     // 在可见的时间 每秒增加1  不可见时不增加
     Stream.periodic(const Duration(seconds: 1))
         .bindLifecycle(lifecycle, repeatLastOnRestart: true)
-        .listen((event) => stayed.value++);
+        .listen((_) => stayed.value += 1);
   }
 }
 
-class HomePage extends HookWidget {
-  const HomePage({super.key});
+class HomeServiceDemo extends HookWidget {
+  const HomeServiceDemo({super.key});
 
   @override
   Widget build(BuildContext context) {
     // 单独使用lifecycle
-    final homeService =
-        useLifecycleEffect<HomeService>(factory2: HomeService.new);
+    final homeService = useLifecycleEffect<HomeService>(
+      factory2: HomeService.new,
+      // 在首次可见时启动
+      launchOnFirstResume: (_, s) => s.startTicker(),
+    );
     // hooks 处理变化
-    final stayed = useListenable(homeService.stayed);
+    final stayed = useListenable(
+      homeService.stayed,
+    );
     return Scaffold(
       appBar: AppBar(
         title: Text('Lifecycle Hook Demo Home Page'),
@@ -67,33 +82,28 @@ class HomePage extends HookWidget {
   }
 }
 
-class ViewModelApp with ViewModel {
-  int incrementStep = 1;
-}
+class HomeViewModel with ViewModel {
+  // 存放全局配置
+  final AppViewModel appModel;
 
-class ViewModelHome with ViewModel {
-  final ValueNotifier<int> counter = ValueNotifier<int>(0);
-  final ViewModelApp appModel;
+  // 创建一个自动管理的 ValueNotifier<int>
+  late final counter = valueNotifier(0);
 
   //  可以从lifecycle中之前获取已存在的ViewModel
-  ViewModelHome(Lifecycle lifecycle) : appModel = lifecycle.viewModelsByApp() {
-    //将ValueNotifier与VM管理 自动销毁
-    counter.bindLifecycle(lifecycle);
-  }
+  HomeViewModel(Lifecycle lifecycle) : appModel = lifecycle.viewModelsByApp();
 
   void incrementCounter() {
     counter.value += appModel.incrementStep;
   }
 }
 
-class ViewModelHomePage extends HookWidget {
-  const ViewModelHomePage({super.key});
+class HomeViewModelDemo extends HookWidget {
+  const HomeViewModelDemo({super.key});
 
   @override
   Widget build(BuildContext context) {
     // 使用viewmodel
-    final viewModel =
-        useLifecycleViewModelEffect<ViewModelHome>(factory2: ViewModelHome.new);
+    final viewModel = useLifecycleViewModelEffect(factory2: HomeViewModel.new);
 
     // hooks 处理变化
     final counter = useListenable(viewModel.counter);
@@ -128,7 +138,7 @@ class HomeFloatingButton extends HookWidget {
   @override
   Widget build(BuildContext context) {
     // 如果提前已经注册过或者确定已经存在对象则可以直接使用
-    final vm = useLifecycleViewModelEffect<ViewModelHome>();
+    final vm = useLifecycleViewModelEffect<HomeViewModel>();
     return FloatingActionButton(
       onPressed: vm.incrementCounter,
       tooltip: 'Increment',
