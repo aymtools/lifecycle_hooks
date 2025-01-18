@@ -63,12 +63,11 @@ class HomeServiceDemo extends HookWidget {
     final homeService = useLifecycleEffect<HomeService>(
       factory2: HomeService.new,
       // 在首次可见时启动
-      launchOnFirstResume: (_, s) => s.startTicker(),
+      launchOnFirstResume: (_, service) => service.startTicker(),
     );
     // hooks 处理变化
-    final stayed = useListenable(
-      homeService.stayed,
-    );
+    final stayed = useListenable(homeService.stayed);
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Lifecycle Hook Demo Home Page'),
