@@ -1,3 +1,7 @@
+## 2.0.0
+
+* Upgrading Dependencies.
+
 ## 1.1.0
 
 * Upgrading Dependencies.
