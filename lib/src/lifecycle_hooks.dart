@@ -168,11 +168,10 @@ T useLifecycleEffect<T extends Object>({
   );
 }
 
-final _keyLifecycleViewModelEffect = Object();
-
 /// 对于 ViewModel 在当前生命周期事件中执行
 /// 取当前 环境中唯一的 ViewModel 对象 与 其他的 hook 中的 use 不同
 /// 注意 lifecycle 不一定是管理 ViewModel 的 Lifecycle
+@Deprecated('use useLifecycleAndViewModelEffect')
 VM useLifecycleViewModelEffect<VM extends ViewModel>({
   VM? data,
   VM Function()? factory,
@@ -185,18 +184,44 @@ VM useLifecycleViewModelEffect<VM extends ViewModel>({
   LifecycleEffectTask<VM>? repeatOnResumed,
   ViewModelProvider Function(Lifecycle)? viewModelProvider,
   ViewModelProvider Function(LifecycleOwner lifecycleOwner)? viewModelProvider2,
+}) =>
+    useLifecycleAndViewModelEffect(
+      data: data,
+      factory: factory,
+      factory2: factory2,
+      launchOnFirstCreate: launchOnFirstCreate,
+      launchOnFirstStart: launchOnFirstStart,
+      launchOnFirstResume: launchOnFirstResume,
+      launchOnDestroy: launchOnDestroy,
+      repeatOnStarted: repeatOnStarted,
+      repeatOnResumed: repeatOnResumed,
+      viewModelProviderProducer: viewModelProvider2 ??
+          (viewModelProvider == null
+              ? null
+              : (owner) => viewModelProvider(owner.lifecycle)),
+    );
+
+/// 对于 ViewModel 在当前生命周期事件中执行
+/// 取当前 环境中唯一的 ViewModel 对象 与 其他的 hook 中的 use 不同
+/// 注意 lifecycle 不一定是管理 ViewModel 的 Lifecycle
+VM useLifecycleAndViewModelEffect<VM extends ViewModel>({
+  VM? data,
+  VM Function()? factory,
+  VM Function(Lifecycle lifecycle)? factory2,
+  LifecycleEffectTask<VM>? launchOnFirstCreate,
+  LifecycleEffectTask<VM>? launchOnFirstStart,
+  LifecycleEffectTask<VM>? launchOnFirstResume,
+  LifecycleEffectTask<VM>? launchOnDestroy,
+  LifecycleEffectTask<VM>? repeatOnStarted,
+  LifecycleEffectTask<VM>? repeatOnResumed,
+  ViewModelProvider Function(LifecycleOwner lifecycleOwner)?
+      viewModelProviderProducer,
 }) {
-  return useContext().withLifecycleEffectData(
-    factory2: (lifecycle) {
-      if (viewModelProvider != null && viewModelProvider2 == null) {
-        viewModelProvider2 = (owner) => viewModelProvider(owner.lifecycle);
-      }
-      return lifecycle.viewModels(
-          factory: data == null ? factory : () => data,
-          factory2: factory2,
-          viewModelProvider: viewModelProvider2);
-    },
-    key: _keyLifecycleViewModelEffect,
+  return useContext().withLifecycleAndViewModelEffect(
+    data: data,
+    factory: factory,
+    factory2: factory2,
+    viewModelProviderProducer: viewModelProviderProducer,
     launchOnFirstCreate: launchOnFirstCreate,
     launchOnFirstStart: launchOnFirstStart,
     launchOnFirstResume: launchOnFirstResume,
