@@ -1,3 +1,7 @@
+## 2.0.2
+
+* Upgrading Dependencies.
+
 ## 2.0.1
 
 * add useLifecycleAndViewModelEffect.

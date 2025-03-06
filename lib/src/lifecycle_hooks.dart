@@ -155,7 +155,7 @@ T useLifecycleEffect<T extends Object>({
     }
   }
 
-  return useContext().withLifecycleEffectData(
+  return useContext().withLifecycleAndDataEffect(
     factory2: (l) =>
         l.extData.getOrPut<T>(key: _keyLifecycleEffect, ifAbsent: factory2!),
     key: key,
