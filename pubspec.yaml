@@ -1,6 +1,6 @@
 name: an_lifecycle_hooks
 description: "Provide an extension development toolkit for the flutter_hooks library for anlifecycle and an_viewmodel."
-version: 2.0.2
+version: 2.1.0
 homepage: https://github.com/aymtools/lifecycle_hooks/
 issue_tracker: https://github.com/aymtools/lifecycle_hooks/issues
 
@@ -21,12 +21,12 @@ dependencies:
   weak_collections: ^1.2.1
   flutter_hooks: ^0.19.0
 
-  cancellable: ^2.0.1
-  anlifecycle: ^3.1.0
-  an_lifecycle_cancellable: ^2.1.0
-  an_viewmodel: ^2.1.2
+  cancellable: ^2.2.2
+  anlifecycle: ^3.1.4
+  an_lifecycle_cancellable: ^2.3.1
+  an_viewmodel: ^3.0.0
 
 dev_dependencies:
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
 
 flutter:

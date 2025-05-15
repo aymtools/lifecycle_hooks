@@ -38,18 +38,12 @@ to [anlifecycle](https://pub.dev/packages/anlifecycle) for guidance.
 ```dart
 
 class HomeService {
-  final Lifecycle lifecycle;
   final ValueNotifier<int> stayed = ValueNotifier<int>(0);
 
-  HomeService(this.lifecycle) {
-    // stayed 绑定到生命周期 当生命周期销毁时 自动调用 [ValueNotifier.dispose]
-    stayed.bindLifecycle(lifecycle);
-  }
-
-  void startTicker() {
+  void startTicker(Lifecycle lifecycle) {
     // 在可见的时间 每秒增加1  不可见时不增加
     Stream.periodic(const Duration(seconds: 1))
-        .bindLifecycle(lifecycle, repeatLastOnRestart: true)
+        .bindLifecycle(lifecycle, repeatLastOnStateAtLeast: true)
         .listen((event) => stayed.value += 1);
   }
 }
@@ -61,9 +55,9 @@ class HomeServiceDemo extends HookWidget {
   Widget build(BuildContext context) {
     // 单独使用lifecycle
     final homeService = useLifecycleEffect<HomeService>(
-      factory2: HomeService.new,
+      factory: HomeService.new,
       // 在首次可见时启动
-      launchOnFirstResume: (_, service) => service.startTicker(),
+      launchOnFirstResume: (l, service) => service.startTicker(l),
     );
     // hooks 处理变化
     final stayed = useListenable(homeService.stayed);
@@ -87,14 +81,12 @@ class HomeServiceDemo extends HookWidget {
 ```dart 
 
 class HomeViewModel with ViewModel {
-  // 存放全局配置
-  final AppViewModel appModel;
+  // 获取存放全局配置 需要已经存在或者提前已经注册过创建方式 ViewModel.factories
+  //    .addFactory(AppViewModel.new, producer: ViewModel.producer.byApp);
+  late final AppViewModel appModel = viewModels();
 
   // 创建一个自动管理的 ValueNotifier<int>
   late final counter = valueNotifier(0);
-
-  //  可以从lifecycle中之前获取已存在的ViewModel
-  HomeViewModel(Lifecycle lifecycle) : appModel = lifecycle.viewModelsByApp();
 
   void incrementCounter() {
     counter.value += appModel.incrementStep;
@@ -107,7 +99,7 @@ class HomeViewModelDemo extends HookWidget {
   @override
   Widget build(BuildContext context) {
     // 使用viewmodel
-    final viewModel = useLifecycleViewModelEffect(factory2: HomeViewModel.new);
+    final viewModel = useLifecycleViewModelEffect(factory: HomeViewModel.new);
 
     // hooks 处理变化
     final counter = useListenable(viewModel.counter);
