@@ -7,10 +7,10 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:weak_collections/weak_collections.dart';
 
-@Deprecated('use HookWidget')
+@Deprecated('will remove use HookWidget')
 typedef LHookWidget = HookWidget;
 
-@Deprecated('use StatefulHookWidget')
+@Deprecated('will remove use StatefulHookWidget')
 typedef LStatefulHookWidget = StatefulHookWidget;
 
 final Map<BuildContext, _HookLifecycleRegistry> _hooksLifecycleRegistry =
@@ -105,6 +105,7 @@ class _LifecycleHookState extends HookState<void, _LifecycleRegistryHook> {
 
 /// 使用lifecycleRegistry相关
 /// 调用多次时 返回同一个
+@Deprecated('will remove')
 ILifecycleRegistry useLifecycleRegistry() {
   final context = useContext();
   if (context is ILifecycleRegistry) {
@@ -132,6 +133,8 @@ final _keyLifecycleEffect = Object();
 /// 取当前 lifecycle 环境中 Type 唯一的对象 与 其他的 hook 中的 use不同
 /// 调用多次时 返回同一个（第一次创建的那一个）
 /// 将会抬高 改对象的引用 直到 lifecycle 的销毁时
+@Deprecated(
+    'use context.withLifecycleEffect() or context.withLifecycleAndDataEffect()')
 T useLifecycleEffect<T extends Object>({
   T? data,
   T Function()? factory,
@@ -171,7 +174,7 @@ T useLifecycleEffect<T extends Object>({
 /// 对于 ViewModel 在当前生命周期事件中执行
 /// 取当前 环境中唯一的 ViewModel 对象 与 其他的 hook 中的 use 不同
 /// 注意 lifecycle 不一定是管理 ViewModel 的 Lifecycle
-@Deprecated('use useLifecycleAndViewModelEffect')
+@Deprecated('use context.withLifecycleAndViewModelEffect()')
 VM useLifecycleViewModelEffect<VM extends ViewModel>({
   VM? data,
   VM Function()? factory,
@@ -204,6 +207,7 @@ VM useLifecycleViewModelEffect<VM extends ViewModel>({
 /// 对于 ViewModel 在当前生命周期事件中执行
 /// 取当前 环境中唯一的 ViewModel 对象 与 其他的 hook 中的 use 不同
 /// 注意 lifecycle 不一定是管理 ViewModel 的 Lifecycle
+@Deprecated('use context.withLifecycleAndViewModelEffect()')
 VM useLifecycleAndViewModelEffect<VM extends ViewModel>({
   VM? data,
   VM Function()? factory,

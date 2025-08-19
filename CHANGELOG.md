@@ -1,3 +1,7 @@
+## 2.2.0
+
+* The final version, no longer maintained moving forward.
+
 ## 2.1.0
 
 * Upgrading Dependencies.

@@ -1,5 +1,10 @@
 A toolkit that introduces lifecycle events from the AnLifecycle library into the hooks library
 
+# Maintenance
+
+Maintenance will no longer be provided, please use the useContext.withXXX related extension
+functions instead.
+
 ## Usage
 
 #### 1.1 Prepare the lifecycle environment.
