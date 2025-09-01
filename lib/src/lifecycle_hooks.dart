@@ -120,6 +120,7 @@ ILifecycleRegistry useLifecycleRegistry() {
 
 /// 使用lifecycle相关
 /// 调用多次时 返回同一个
+@Deprecated('use Lifecycle.of(useContext())')
 Lifecycle useLifecycle() {
   final context = useContext();
   return Lifecycle.of(context);
@@ -207,7 +208,7 @@ VM useLifecycleViewModelEffect<VM extends ViewModel>({
 /// 对于 ViewModel 在当前生命周期事件中执行
 /// 取当前 环境中唯一的 ViewModel 对象 与 其他的 hook 中的 use 不同
 /// 注意 lifecycle 不一定是管理 ViewModel 的 Lifecycle
-@Deprecated('use context.withLifecycleAndViewModelEffect()')
+@Deprecated('use viewModels() and withLifecycleEffect()')
 VM useLifecycleAndViewModelEffect<VM extends ViewModel>({
   VM? data,
   VM Function()? factory,
@@ -221,6 +222,7 @@ VM useLifecycleAndViewModelEffect<VM extends ViewModel>({
   ViewModelProvider Function(LifecycleOwner lifecycleOwner)?
       viewModelProviderProducer,
 }) {
+  //  ignore: deprecated_member_use_from_same_package
   return useContext().withLifecycleAndViewModelEffect(
     data: data,
     factory: factory,
